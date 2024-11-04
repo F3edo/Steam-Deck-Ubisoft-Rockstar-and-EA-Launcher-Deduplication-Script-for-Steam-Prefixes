@@ -19,6 +19,10 @@ os.makedirs(launchers_dir, exist_ok=True)
 # Counter for processed folders
 processed_count = 0
 
+# Helper function for printing in red bold text
+def print_bold_red(text):
+    print(f"\033[1m\033[91m{text}\033[0m")
+
 # Helper function for printing in blue bold text
 def print_bold_blue(text):
     print(f"\033[1m\033[94m{text}\033[0m")
@@ -34,7 +38,7 @@ def print_normal_with_bold_skipping(text):
 # Initial message
 print_bold_blue("Steam Deck Ubisoft, Rockstar and EA Launcher Deduplication Script v1.1")
 print("Script consolidates launcher installations, removes duplicates and ensures Ubisoft savegames are preserved without conflicts.")
-print_bold_blue("For newly downloaded games, make sure to launch them at least once to allow all necessary Proton files to be installed.")
+print_bold_red("For freshly downloaded games, make sure to LAUNCH THEM AT LEAST ONCE to allow all necessary Proton files to be installed.")
 print_bold("Press any key to continue...")
 input()  # Wait for user to press any key to continue
 
