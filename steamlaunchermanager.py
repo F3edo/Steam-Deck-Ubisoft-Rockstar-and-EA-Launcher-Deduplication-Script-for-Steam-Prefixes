@@ -2,6 +2,7 @@
 
 import os
 import shutil
+from datetime import datetime
 
 # Define paths and folders
 launchers_dir = "/home/deck/.local/share/Steam/steamapps/compatdata/Launchers"
@@ -38,15 +39,35 @@ def print_normal_with_bold_skipping(text):
 # Initial message
 print_bold_blue("Steam Deck Ubisoft, Rockstar and EA Launcher Deduplication Script v1.1")
 print("Script consolidates launcher installations, removes duplicates and ensures Ubisoft savegames are preserved without conflicts.")
-print_bold_red("For freshly downloaded games, make sure to LAUNCH THEM AT LEAST ONCE to allow all necessary Proton files to be installed.")
-print_bold("Press any key to continue...")
+print(" ")
+print_bold_red("For freshly downloaded games, make sure to LAUNCH THEM AT LEAST ONCE to allow all necessary Proton files to be installed before running the script.")
+print(" ")
+
+# Disk space check function (1 GB minimum requirement)
+def check_disk_space():
+    total, used, free = shutil.disk_usage("/home")
+    free_gb = free / (2**30)  # Convert to GB with decimals for accuracy
+    print(f"Available disk space: {free_gb:.2f} GB.")  # Display with two decimal places
+    return free_gb
+
+# Save info about free disk space
+initial_free_space = check_disk_space()
+
+# Check disk space before proceeding
+if initial_free_space < 1:  # Assuming 1 GB minimum space required
+    print_bold_red("Not enough free disk space. Shutting down.")
+    exit()
+
+# Initial message
+print("Press any key to continue...")
 input()  # Wait for user to press any key to continue
 
-# Function to handle savegames with conflict check
+# Function to handle savegames with conflict check and conditional backup creation
 def copy_savegames_with_conflict_check(src, dest):
-    # Prevent copying if the source is within the Launchers folder
+    backup_dir_created = False  # Track if backup folder is created
+
     if src.startswith(launchers_dir):
-        print_normal_with_bold_skipping(f"Skipping savegames copy from {src} (Launchers folder is not a source)")
+        print_normal_with_bold_skipping(f"Launchers folder is not a source {src}")
         return
     
     for root, _, files in os.walk(src):
@@ -54,22 +75,27 @@ def copy_savegames_with_conflict_check(src, dest):
             src_file = os.path.join(root, file)
             rel_path = os.path.relpath(src_file, src)
             dest_file = os.path.join(dest, rel_path)
-
-            # Ensure source and destination are not the same file
+            
             if os.path.abspath(src_file) == os.path.abspath(dest_file):
                 print_normal_with_bold_skipping(f"Skipping copy for {src_file} as source and destination are the same")
                 continue
-
+            
             if os.path.exists(dest_file):
                 # Check for conflict by comparing file sizes
                 if os.path.getsize(src_file) != os.path.getsize(dest_file):
-                    print_bold(f"Conflict detected for savegame file: {src_file}")
-                    print_bold(f"Existing file: {dest_file}")
-                    print_bold("Files have different sizes. Please back up and press Enter to continue...")
-                    input()  # Wait for user to press Enter after backup
-                    continue  # Skip conflicting file after warning
-
-            # Copy file if no conflict or conflict resolved
+                    # Create the backup folder only once when a conflict is detected
+                    if not backup_dir_created:
+                        backup_dir = os.path.join(launchers_dir, "Ubisoft savegames backup")
+                        os.makedirs(backup_dir, exist_ok=True)
+                        backup_dir_created = True  # Set flag to avoid re-creating the folder
+                    
+                    # Maintain the subfolder structure within the backup directory
+                    backup_file_path = os.path.join(backup_dir, rel_path)
+                    os.makedirs(os.path.dirname(backup_file_path), exist_ok=True)
+                    shutil.copy2(dest_file, backup_file_path)
+                    print_bold_red(f"Savegame file conflict detected. Backup created at {backup_file_path}")
+            
+            # Copy file if no conflict or after creating a backup
             os.makedirs(os.path.dirname(dest_file), exist_ok=True)
             shutil.copy2(src_file, dest_file)
             print_bold(f"Copied savegame file {src_file} to {dest_file}")
@@ -102,7 +128,7 @@ for prefix in os.listdir(prefixes_root):
     if os.path.isdir(prefix_path):
         # Skip processing if the prefix path is the Launchers folder
         if prefix_path == launchers_dir:
-            print_normal_with_bold_skipping(f"Skipping processing of the Launchers folder: {launchers_dir}")
+            print_normal_with_bold_skipping(f"Launchers folder is not a source {launchers_dir}")
             continue
 
         # Check if Ubisoft is a symlink and skip savegames processing if true
@@ -123,6 +149,15 @@ for prefix in os.listdir(prefixes_root):
         for folder in folders_to_find:
             process_folder(prefix_path, folder)
 
-# Display final message with GitHub link
+# Display counter
+print(" ")
 print_bold_blue(f"Processing complete. Total launchers deduplicated: {processed_count}")
+
+# Check disk space
+final_free_space = check_disk_space()
+
+# Display final message with GitHub link
+print("You can find Launchers in /home/deck/.local/share/Steam/steamapps/compatdata/Launchers/")
+print(" ")
 print_bold_blue("Follow for new updates of this script: https://github.com/F3edo/Steam-Deck-Ubisoft-Rockstar-and-EA-Launcher-Deduplication-Script-for-Steam-Prefixes")
+print(" ")
