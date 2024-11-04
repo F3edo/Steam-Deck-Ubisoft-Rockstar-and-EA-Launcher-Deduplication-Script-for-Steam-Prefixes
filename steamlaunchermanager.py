@@ -32,8 +32,8 @@ def print_normal_with_bold_skipping(text):
     print(f"{text}, \033[1mskipping\033[0m")
 
 # Initial message
-print_bold_blue("Initializing Steam Deck Ubisoft, Rockstar and EA Launcher Deduplication Script v1.1")
-print("Script consolidates launcher installations, removes duplicates, and ensures Ubisoft savegames are preserved without conflicts.")
+print_bold_blue("Steam Deck Ubisoft, Rockstar and EA Launcher Deduplication Script v1.1")
+print("Script consolidates launcher installations, removes duplicates and ensures Ubisoft savegames are preserved without conflicts.")
 print_bold_blue("For newly downloaded games, make sure to launch them at least once to allow all necessary Proton files to be installed.")
 print_bold("Press any key to continue...")
 input()  # Wait for user to press any key to continue
@@ -104,7 +104,7 @@ for prefix in os.listdir(prefixes_root):
         # Check if Ubisoft is a symlink and skip savegames processing if true
         ubisoft_path = os.path.join(prefix_path, "pfx/drive_c", "Program Files (x86)/Ubisoft")
         if os.path.islink(ubisoft_path):
-            print_normal_with_bold_skipping(f"Ubisoft savegames already copied for {ubisoft_path}")
+            print_normal_with_bold_skipping(f"Symlink already exists for {ubisoft_path}")
             continue
 
         # Check and handle savegames folder separately for Ubisoft
